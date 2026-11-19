@@ -34,7 +34,7 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        $user = User::where('email', $credentials['email'])->first();
+        $user = User::where('email', '=', $credentials['email'], 'and')->first();
 
         if (! $user || ! Hash::check($credentials['password'], $user->password)) {
             throw ValidationException::withMessages([
@@ -57,7 +57,15 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        $user = $request->user();
+
+        if (! $user) {
+            return response()->json([
+                'message' => 'No autenticado.',
+            ], 401);
+        }
+
+        $user->tokens()->delete();
 
         return response()->json([
             'message' => 'Sesión cerrada correctamente.',
